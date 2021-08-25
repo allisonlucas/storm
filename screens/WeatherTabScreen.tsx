@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Image } from 'react-native';
 import * as Location from 'expo-location';
 
 import EditScreenInfo from '../components/EditScreenInfo';
@@ -28,15 +28,25 @@ export default function WeatherTabScreen() {
     })();
   }, []);
 
-  return (
-    <View style={styles.container}>
-      {/* TODO: Use Google Maps geolocation to turn the lat/lng into a city name */}
-      <Text style={styles.title}>{weatherData?.timezone ? weatherData?.timezone : null}</Text>
-      <Text style={styles.title}>{weatherData?.current?.temp ? `${weatherData?.current?.temp}\u00b0 F` : 'Loading...'}</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="/screens/WeatherTabScreen.tsx" />
-    </View>
-  );
+  if (weatherData) {
+    return (
+      <View style={styles.container}>
+        <Image
+          style={styles.weatherIcon}
+          source={{ uri: `http://openweathermap.org/img/wn/${weatherData.current.weather[0].icon}@2x.png` }}
+        />
+        <Text style={styles.title}>{`${weatherData.current.weather[0].main}, feels like ${weatherData.current.feels_like}\u00b0 F`}</Text>
+        <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
+
+        {/* TODO: Use Google Maps geolocation to turn the lat/lng into a city name */}
+        <Text style={styles.title}>{weatherData.timezone}</Text>
+        <Text style={styles.title}>{`${weatherData.current?.temp}\u00b0 F`}</Text>
+        <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
+        <EditScreenInfo path="/screens/WeatherTabScreen.tsx" />
+      </View>
+    );
+  }
+  return <Text>Loading...</Text>;
 }
 
 const styles = StyleSheet.create({
@@ -53,5 +63,9 @@ const styles = StyleSheet.create({
     marginVertical: 30,
     height: 1,
     width: '80%',
+  },
+  weatherIcon: {
+    width: 50,
+    height: 50,
   },
 });
