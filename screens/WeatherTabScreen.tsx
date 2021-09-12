@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Image, Dimensions, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
-import { LineChart } from 'react-native-chart-kit';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Image, ScrollView } from 'react-native';
+import { VictoryLine, VictoryChart, VictoryTheme, VictoryAxis, VictoryScatter, VictoryGroup } from "victory"; // TODO: Import from victory-native when vieiwing app on mobile
 
 import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
@@ -18,7 +18,9 @@ type OpenWeatherOneCallData = {
 };
 
 export default function WeatherTabScreen() {
+  const NUM_HOURS = 24;
   const [weatherData, setWeatherData] = useState<OpenWeatherOneCallData | null>(null);
+  const [tempAtTimeData, setTempAtTimeData] = useState<Array<{ x: Date, y: number }> | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -39,11 +41,17 @@ export default function WeatherTabScreen() {
     })();
   }, []);
 
-  if (weatherData) {
-    const hoursLeftToday = 24 - new Date(weatherData.hourly[0].dt * 1000).getHours();
-    const hourLabels = weatherData.hourly.map(hourData => new Date(hourData.dt * 1000).getHours().toString()).splice(0, hoursLeftToday);
-    const hourlyTempData = weatherData.hourly.map(hourData => Math.round(hourData.temp)).splice(0, hoursLeftToday);
+  useEffect(() => {
+    if (weatherData) {
+      setTempAtTimeData(weatherData.hourly.map(hourData => {
+        const hour = new Date(hourData.dt * 1000);
+        const temp = Math.round(hourData.temp);
+        return { x: hour, y: temp };
+      }).splice(0, NUM_HOURS));
+    }
+  }, [weatherData])
 
+  if (weatherData && tempAtTimeData) {
     return (
       <View style={styles.container}>
         <ScrollView style={styles.scrollContainer}>
@@ -59,35 +67,42 @@ export default function WeatherTabScreen() {
           <Text style={styles.title}>{`${weatherData.current?.temp}\u00b0 F`}</Text>
           <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
 
-          <LineChart
-            data={{
-              labels: hourLabels,
-              datasets: [
-                {
-                  data: hourlyTempData,
-                },
-              ],
-            }}
-            width={Dimensions.get('window').width - 20}
-            height={220}
-            yAxisSuffix={`\u00b0`}
-            chartConfig={{
-              backgroundColor: '#1cc910',
-              backgroundGradientFrom: '#eff3ff',
-              backgroundGradientTo: '#efefef',
-              decimalPlaces: 0, // optional, defaults to 2dp
-              color: (opacity = 255) => `rgba(0, 0, 0, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-            }}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16,
-            }}
-          />
+          <VictoryChart
+            theme={VictoryTheme.material}
+            padding={{ left: 50, top: 20, right: 20, bottom: 35 }}
+          >
+            {/* x-axis */}
+            <VictoryAxis
+              tickValues={tempAtTimeData.map(d => d.x)}
+              tickFormat={t => t.getHours()}
+              tickCount={NUM_HOURS / 2}
+              scale={{ x: "time" }}
+            />
+            {/* y-axis */}
+            <VictoryAxis
+              dependentAxis
+              tickCount={9}
+              tickFormat={(t) => `${t}\u00b0F`}
+            />
+            <VictoryGroup
+              domainPadding={{ y: 20 }}
+            >
+              <VictoryLine
+                // style={{
+                //   data: { stroke: "#c43a31" }
+                // }}
+                data={tempAtTimeData}
+
+              />
+              <VictoryScatter
+                data={tempAtTimeData}
+              />
+              <VictoryLine data={tempAtTimeData.map(d => { return { x: d.x, y: 70 } })} />
+            </VictoryGroup>
+          </VictoryChart>
 
           <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
+
           <EditScreenInfo path="/screens/WeatherTabScreen.tsx" />
         </ScrollView>
       </View>
