@@ -78,26 +78,18 @@ export default function WeatherTabScreen() {
               tickCount={NUM_HOURS / 2}
               scale={{ x: "time" }}
             />
-            {/* y-axis */}
-            <VictoryAxis
-              dependentAxis
-              tickCount={9}
-              tickFormat={(t) => `${t}\u00b0F`}
-            />
-            <VictoryGroup
-              domainPadding={{ y: 20 }}
-            >
-              <VictoryLine
-                // style={{
-                //   data: { stroke: "#c43a31" }
-                // }}
-                data={tempAtTimeData}
-
-              />
-              <VictoryScatter
-                data={tempAtTimeData}
-              />
+            <VictoryGroup domainPadding={{ y: 20 }}>
+              <VictoryGroup data={tempAtTimeData}>
+                <VictoryLine />
+                <VictoryScatter />
+              </VictoryGroup>
               <VictoryLine data={tempAtTimeData.map(d => { return { x: d.x, y: 70 } })} />
+              {/* y-axis */}
+              <VictoryAxis
+                dependentAxis
+                tickCount={9}
+                tickFormat={(t) => `${t}\u00b0F`}
+              />
             </VictoryGroup>
           </VictoryChart>
 
