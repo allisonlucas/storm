@@ -1,20 +1,40 @@
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Image, ScrollView } from 'react-native';
-import { VictoryLine, VictoryChart, VictoryTheme, VictoryAxis, VictoryScatter, VictoryGroup } from "victory"; // TODO: Import from victory-native when vieiwing app on mobile
+import {
+  VictoryAxis,
+  VictoryChart,
+  VictoryGroup,
+  VictoryLabel,
+  VictoryLine,
+  VictoryScatter,
+  VictoryTheme,
+} from "victory"; // TODO: Import from victory-native when vieiwing app on mobile
 
 import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
 import { OPEN_WEATHER_MAP_API_KEY } from '../utils/apiKeys';
 
 type OpenWeatherOneCallData = {
-  current: Object;
+  daily: {
+    sunrise: number;
+    sunset: number;
+  }[];
   hourly: [
     {
       dt: number;
       temp: number;
     }
-  ]
+  ];
+  current: {
+    weather: {
+      main: string;
+      icon: number;
+    }[];
+    feels_like: number;
+    temp: number;
+  };
+  timezone: string;
 };
 
 export default function WeatherTabScreen() {
@@ -44,14 +64,77 @@ export default function WeatherTabScreen() {
   useEffect(() => {
     if (weatherData) {
       setTempAtTimeData(weatherData.hourly.map(hourData => {
-        const hour = new Date(hourData.dt * 1000);
+        const dateTime = new Date(hourData.dt * 1000);
         const temp = Math.round(hourData.temp);
-        return { x: hour, y: temp };
+        return { x: dateTime, y: temp };
       }).splice(0, NUM_HOURS));
     }
   }, [weatherData])
 
   if (weatherData && tempAtTimeData) {
+    const minTime = tempAtTimeData[0].x;
+    const maxTime = tempAtTimeData[tempAtTimeData.length - 1].x;
+    const tempArray = tempAtTimeData.map(d => d.y);
+    const maxTemp = Math.max(...tempArray);
+
+    const withinTimeBounds = (dateTime: Date) => {
+      return (dateTime > minTime && dateTime < maxTime) ? true : false
+    }
+
+    const sunriseLine = () => {
+      const sunriseDateTimeToday = new Date(weatherData.daily[0].sunrise * 1000);
+      const sunriseDateTimeTom = new Date(weatherData.daily[1].sunrise * 1000);
+      const label = (sunrise: Date) => `Sunrise\n${sunrise.getHours()}:${sunrise.getMinutes()}`
+      if (withinTimeBounds(sunriseDateTimeToday)) {
+        const data: { x: Date, y: number, label: null | string }[] = tempAtTimeData.map(d => { return { x: sunriseDateTimeToday, y: d.y, label: null } });
+        data[tempArray.indexOf(maxTemp)].label = label(sunriseDateTimeToday);
+        return (
+          <VictoryLine
+            data={data}
+            labels={(d) => d.label}
+            labelComponent={<VictoryLabel dy={-5} renderInPortal />}
+          />
+        );
+      } else if (withinTimeBounds(sunriseDateTimeTom)) {
+        const data: { x: Date, y: number, label: null | string }[] = tempAtTimeData.map(d => { return { x: sunriseDateTimeTom, y: d.y, label: null } });
+        data[tempArray.indexOf(maxTemp)].label = label(sunriseDateTimeTom);
+        return (
+          <VictoryLine
+            data={data}
+            labels={(d) => d.label}
+            labelComponent={<VictoryLabel dy={-5} renderInPortal />}
+          />
+        );
+      }
+    };
+
+    const sunsetLine = () => {
+      const sunsetDateTimeToday = new Date(weatherData.daily[0].sunset * 1000);
+      const sunsetDateTimeTom = new Date(weatherData.daily[1].sunset * 1000);
+      const label = (sunset: Date) => `Sunset\n${sunset.getHours()}:${sunset.getMinutes()}`
+      if (withinTimeBounds(sunsetDateTimeToday)) {
+        const data: { x: Date, y: number, label: null | string }[] = tempAtTimeData.map(d => { return { x: sunsetDateTimeToday, y: d.y, label: null } });
+        data[tempArray.indexOf(maxTemp)].label = label(sunsetDateTimeToday);
+        return (
+          <VictoryLine
+            data={data}
+            labels={(d) => d.label}
+            labelComponent={<VictoryLabel dy={-5} renderInPortal />}
+          />
+        );
+      } else if (withinTimeBounds(sunsetDateTimeTom)) {
+        const data: { x: Date, y: number, label: null | string }[] = tempAtTimeData.map(d => { return { x: sunsetDateTimeTom, y: d.y, label: null } });
+        data[tempArray.indexOf(maxTemp)].label = label(sunsetDateTimeTom);
+        return (
+          <VictoryLine
+            data={data}
+            labels={(d) => d.label}
+            labelComponent={<VictoryLabel dy={-5} renderInPortal />}
+          />
+        );
+      }
+    };
+
     return (
       <View style={styles.container}>
         <ScrollView style={styles.scrollContainer}>
@@ -64,13 +147,15 @@ export default function WeatherTabScreen() {
 
           {/* TODO: Use Google Maps geolocation to turn the lat/lng into a city name */}
           <Text style={styles.title}>{weatherData.timezone}</Text>
-          <Text style={styles.title}>{`${weatherData.current?.temp}\u00b0 F`}</Text>
+          <Text style={styles.title}>{`${weatherData.current.temp}\u00b0 F`}</Text>
           <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
 
           <VictoryChart
             theme={VictoryTheme.material}
-            padding={{ left: 50, top: 20, right: 20, bottom: 35 }}
+            padding={{ left: 50, top: 20, right: 30, bottom: 35 }}
           >
+            {sunriseLine()}
+            {sunsetLine()}
             {/* x-axis */}
             <VictoryAxis
               tickValues={tempAtTimeData.map(d => d.x)}
