@@ -43,6 +43,7 @@ export default function WeatherTabScreen() {
   const [tempAtTimeData, setTempAtTimeData] = useState<Array<{ x: Date, y: number }> | null>(null);
 
   useEffect(() => {
+    // TODO: Move location request into reusable component
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -63,11 +64,11 @@ export default function WeatherTabScreen() {
 
   useEffect(() => {
     if (weatherData) {
-      setTempAtTimeData(weatherData.hourly.map(hourData => {
+      setTempAtTimeData(weatherData.hourly.splice(0, NUM_HOURS).map(hourData => {
         const dateTime = new Date(hourData.dt * 1000);
         const temp = Math.round(hourData.temp);
         return { x: dateTime, y: temp };
-      }).splice(0, NUM_HOURS));
+      }));
     }
   }, [weatherData])
 
@@ -142,12 +143,12 @@ export default function WeatherTabScreen() {
             style={styles.weatherIcon}
             source={{ uri: `http://openweathermap.org/img/wn/${weatherData.current.weather[0].icon}@2x.png` }}
           />
-          <Text style={styles.title}>{`${weatherData.current.weather[0].main}, feels like ${weatherData.current.feels_like}\u00b0 F`}</Text>
+          <Text style={styles.title}>{`${weatherData.current.weather[0].main}, feels like ${Math.round(weatherData.current.feels_like)}\u00b0 F`}</Text>
           <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
 
           {/* TODO: Use Google Maps geolocation to turn the lat/lng into a city name */}
           <Text style={styles.title}>{weatherData.timezone}</Text>
-          <Text style={styles.title}>{`${weatherData.current.temp}\u00b0 F`}</Text>
+          <Text style={styles.title}>{`${Math.round(weatherData.current.temp)}\u00b0 F`}</Text>
           <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
 
           <VictoryChart

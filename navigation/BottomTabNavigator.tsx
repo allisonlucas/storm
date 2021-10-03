@@ -79,7 +79,7 @@ function TabTwoNavigator() {
       <TabTwoStack.Screen
         name="TabTwoScreen"
         component={TabTwoScreen}
-        options={{ headerTitle: 'Tab Two Title' }}
+        options={{ headerTitle: 'National Weather Service' }}
       />
     </TabTwoStack.Navigator>
   );
@@ -93,7 +93,7 @@ function WeatherTabNavigator() {
       <WeatherTabStack.Screen
         name="WeatherTabScreen"
         component={WeatherTabScreen}
-        options={{ headerTitle: 'Weather Tab Title' }}
+        options={{ headerTitle: 'Open Weather Map' }}
       />
     </WeatherTabStack.Navigator>
   );
